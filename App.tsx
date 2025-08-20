@@ -1,22 +1,77 @@
 import './global.css';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from 'react-native';
+
+import UsersScreen from './src/screens/UsersScreen';
+import ProductsScreen from './src/screens/ProductsScreen';
+
+const Tab = createBottomTabNavigator();
+
+function TabNavigator() {
+  const insets = useSafeAreaInsets();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#6B7280',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E5E7EB',
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 8,
+          height: 60 + insets.bottom,
+        },
+        headerStyle: {
+          backgroundColor: '#F9FAFB',
+          borderBottomColor: '#E5E7EB',
+        },
+        headerTitleStyle: {
+          fontWeight: '600',
+          color: '#1F2937',
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+      }}
+        >
+          <Tab.Screen
+            name="Users"
+            component={UsersScreen}
+            options={{
+              title: '👥 Users',
+              tabBarLabel: 'Users',
+              tabBarIcon: ({ color, size }) => (
+                <Text style={{ color, fontSize: size }}>👥</Text>
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Products"
+            component={ProductsScreen}
+            options={{
+              title: '📦 Products',
+              tabBarLabel: 'Products',
+              tabBarIcon: ({ color, size }) => (
+                <Text style={{ color, fontSize: size }}>📦</Text>
+              ),
+            }}
+          />
+    </Tab.Navigator>
+  );
+}
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-1 justify-center items-center px-4">
-          <Text className="text-3xl font-bold text-gray-800 mb-4">
-            User & Product Manager
-          </Text>
-          <Text className="text-lg text-gray-600 text-center mb-8">
-            A simple React Native app for managing users and products
-          </Text>
-        </View>
+      <NavigationContainer>
+        <TabNavigator />
         <StatusBar style="auto" />
-      </SafeAreaView>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }
