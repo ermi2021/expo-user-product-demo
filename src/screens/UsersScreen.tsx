@@ -13,26 +13,42 @@ export default function UsersScreen() {
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [errors, setErrors] = useState<{email?: string; fullName?: string}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  const handleRegisterUser = () => {
-    if (!email.trim() || !fullName.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+  const validateForm = () => {
+    const newErrors: {email?: string; fullName?: string} = {};
+
+    // Email validation
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    } else if (users.some(user => user.email.toLowerCase() === email.toLowerCase())) {
+      newErrors.email = 'A user with this email already exists';
     }
 
-    if (!validateEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
+    // Full name validation
+    if (!fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    } else if (fullName.trim().length < 2) {
+      newErrors.fullName = 'Full name must be at least 2 characters';
     }
 
-    // Check if email already exists
-    if (users.some(user => user.email.toLowerCase() === email.toLowerCase())) {
-      Alert.alert('Error', 'A user with this email already exists');
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleRegisterUser = async () => {
+    setIsSubmitting(true);
+    
+    if (!validateForm()) {
+      setIsSubmitting(false);
       return;
     }
 
@@ -46,7 +62,23 @@ export default function UsersScreen() {
     setUsers(prevUsers => [...prevUsers, newUser]);
     setEmail('');
     setFullName('');
+    setErrors({});
+    setIsSubmitting(false);
     Alert.alert('Success', 'User registered successfully!');
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (errors.email) {
+      setErrors(prev => ({...prev, email: undefined}));
+    }
+  };
+
+  const handleFullNameChange = (text: string) => {
+    setFullName(text);
+    if (errors.fullName) {
+      setErrors(prev => ({...prev, fullName: undefined}));
+    }
   };
 
   return (
@@ -73,14 +105,21 @@ export default function UsersScreen() {
               Email Address
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className={`border rounded-lg px-4 py-3 text-base ${
+                errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="Enter email address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={handleEmailChange}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
+            {errors.email && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.email}
+              </Text>
+            )}
           </View>
 
           <View className="mb-6">
@@ -88,20 +127,30 @@ export default function UsersScreen() {
               Full Name
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className={`border rounded-lg px-4 py-3 text-base ${
+                errors.fullName ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="Enter full name"
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={handleFullNameChange}
               autoCapitalize="words"
             />
+            {errors.fullName && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.fullName}
+              </Text>
+            )}
           </View>
 
           <TouchableOpacity
-            className="bg-blue-600 py-3 rounded-lg"
+            className={`py-3 rounded-lg ${
+              isSubmitting ? 'bg-gray-400' : 'bg-blue-600'
+            }`}
             onPress={handleRegisterUser}
+            disabled={isSubmitting}
           >
             <Text className="text-white text-center font-semibold text-base">
-              Register User
+              {isSubmitting ? 'Registering...' : 'Register User'}
             </Text>
           </TouchableOpacity>
         </View>

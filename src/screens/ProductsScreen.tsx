@@ -33,6 +33,13 @@ export default function ProductsScreen() {
   const [quantity, setQuantity] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showTransactions, setShowTransactions] = useState(false);
+  const [errors, setErrors] = useState<{
+    sku?: string;
+    name?: string;
+    price?: string;
+    quantity?: string;
+  }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const transactionsPerPage = 5;
 
   const validateSku = (sku: string) => {
@@ -41,52 +48,115 @@ export default function ProductsScreen() {
     return skuRegex.test(sku);
   };
 
-  const handleRegisterProduct = () => {
-    if (!sku.trim() || !name.trim() || !price.trim() || !quantity.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    // SKU validation
+    if (!sku.trim()) {
+      newErrors.sku = 'SKU is required';
+    } else if (!validateSku(sku)) {
+      newErrors.sku = 'SKU must be at least 3 alphanumeric characters';
+    } else if (products.some(product => product.sku.toLowerCase() === sku.toLowerCase())) {
+      newErrors.sku = 'A product with this SKU already exists';
+    }
+
+    // Name validation
+    if (!name.trim()) {
+      newErrors.name = 'Product name is required';
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'Product name must be at least 2 characters';
+    }
+
+    // Price validation
+    if (!price.trim()) {
+      newErrors.price = 'Price is required';
+    } else {
+      const priceNum = parseFloat(price);
+      if (isNaN(priceNum) || priceNum <= 0) {
+        newErrors.price = 'Please enter a valid price greater than 0';
+      }
+    }
+
+    // Quantity validation
+    if (!quantity.trim()) {
+      newErrors.quantity = 'Quantity is required';
+    } else {
+      const quantityNum = parseInt(quantity);
+      if (isNaN(quantityNum) || quantityNum < 0) {
+        newErrors.quantity = 'Please enter a valid quantity (0 or greater)';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSkuChange = (text: string) => {
+    setSku(text);
+    if (errors.sku) {
+      setErrors(prev => ({ ...prev, sku: undefined }));
+    }
+  };
+
+  const handleNameChange = (text: string) => {
+    setName(text);
+    if (errors.name) {
+      setErrors(prev => ({ ...prev, name: undefined }));
+    }
+  };
+
+  const handlePriceChange = (text: string) => {
+    setPrice(text);
+    if (errors.price) {
+      setErrors(prev => ({ ...prev, price: undefined }));
+    }
+  };
+
+  const handleQuantityChange = (text: string) => {
+    setQuantity(text);
+    if (errors.quantity) {
+      setErrors(prev => ({ ...prev, quantity: undefined }));
+    }
+  };
+
+  const handleRegisterProduct = async () => {
+    if (isSubmitting) return;
+
+    if (!validateForm()) {
       return;
     }
 
-    if (!validateSku(sku)) {
-      Alert.alert('Error', 'SKU must be at least 3 alphanumeric characters');
-      return;
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const priceNum = parseFloat(price);
+      const quantityNum = parseInt(quantity);
+
+      const newProduct: Product = {
+        id: Date.now().toString(),
+        sku: sku.trim().toUpperCase(),
+        name: name.trim(),
+        price: priceNum,
+        quantity: quantityNum,
+        createdAt: new Date(),
+        lastUpdated: new Date()
+      };
+
+      setProducts(prevProducts => [...prevProducts, newProduct]);
+      setSku('');
+      setName('');
+      setPrice('');
+      setQuantity('');
+      setErrors({});
+      Alert.alert('Success', 'Product registered successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to register product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const priceNum = parseFloat(price);
-    const quantityNum = parseInt(quantity);
-
-    if (isNaN(priceNum) || priceNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid price greater than 0');
-      return;
-    }
-
-    if (isNaN(quantityNum) || quantityNum < 0) {
-      Alert.alert('Error', 'Please enter a valid quantity (0 or greater)');
-      return;
-    }
-
-    // Check if SKU (Stock Keeping Unit) already exists
-    if (products.some(product => product.sku.toLowerCase() === sku.toLowerCase())) {
-      Alert.alert('Error', 'A product with this SKU already exists');
-      return;
-    }
-
-    const newProduct: Product = {
-      id: Date.now().toString(),
-      sku: sku.trim().toUpperCase(),
-      name: name.trim(),
-      price: priceNum,
-      quantity: quantityNum,
-      createdAt: new Date(),
-      lastUpdated: new Date()
-    };
-
-    setProducts(prevProducts => [...prevProducts, newProduct]);
-    setSku('');
-    setName('');
-    setPrice('');
-    setQuantity('');
-    Alert.alert('Success', 'Product registered successfully!');
   };
 
   const formatCurrency = (amount: number) => {
@@ -208,13 +278,20 @@ export default function ProductsScreen() {
               SKU (Stock Keeping Unit)
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className={`border rounded-lg px-4 py-3 text-base ${
+                errors.sku ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="Enter SKU (e.g., ABC123)"
               value={sku}
-              onChangeText={setSku}
+              onChangeText={handleSkuChange}
               autoCapitalize="characters"
               autoCorrect={false}
             />
+            {errors.sku && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.sku}
+              </Text>
+            )}
           </View>
 
           <View className="mb-4">
@@ -222,12 +299,19 @@ export default function ProductsScreen() {
               Product Name
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className={`border rounded-lg px-4 py-3 text-base ${
+                errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="Enter product name"
               value={name}
-              onChangeText={setName}
+              onChangeText={handleNameChange}
               autoCapitalize="words"
             />
+            {errors.name && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.name}
+              </Text>
+            )}
           </View>
 
           <View className="flex-row gap-4 mb-6">
@@ -236,33 +320,50 @@ export default function ProductsScreen() {
                 Price ($)
               </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+                className={`border rounded-lg px-4 py-3 text-base ${
+                  errors.price ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
                 placeholder="0.00"
                 value={price}
-                onChangeText={setPrice}
+                onChangeText={handlePriceChange}
                 keyboardType="decimal-pad"
               />
+              {errors.price && (
+                <Text className="text-red-500 text-sm mt-1 ml-1">
+                  {errors.price}
+                </Text>
+              )}
             </View>
             <View className="flex-1">
               <Text className="text-sm font-medium text-gray-700 mb-2">
                 Quantity
               </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+                className={`border rounded-lg px-4 py-3 text-base ${
+                  errors.quantity ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
                 placeholder="0"
                 value={quantity}
-                onChangeText={setQuantity}
+                onChangeText={handleQuantityChange}
                 keyboardType="number-pad"
               />
+              {errors.quantity && (
+                <Text className="text-red-500 text-sm mt-1 ml-1">
+                  {errors.quantity}
+                </Text>
+              )}
             </View>
           </View>
 
           <TouchableOpacity
-            className="bg-green-600 py-3 rounded-lg"
+            className={`py-3 rounded-lg ${
+              isSubmitting ? 'bg-gray-400' : 'bg-green-600'
+            }`}
             onPress={handleRegisterProduct}
+            disabled={isSubmitting}
           >
             <Text className="text-white text-center font-semibold text-base">
-              Register Product
+              {isSubmitting ? 'Registering...' : 'Register Product'}
             </Text>
           </TouchableOpacity>
         </View>

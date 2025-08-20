@@ -30,7 +30,7 @@ A React Native app built with Expo and NativeWind for managing users and product
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ermi2021/expo-user-product-demo.git
    cd expo-user-product-demo
    ```
 
