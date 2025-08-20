@@ -49,7 +49,7 @@ export default function ProductsScreen() {
       return;
     }
 
-    // Check if SKU already exists
+    // Check if SKU (Stock Keeping Unit) already exists
     if (products.some(product => product.sku.toLowerCase() === sku.toLowerCase())) {
       Alert.alert('Error', 'A product with this SKU already exists');
       return;
@@ -79,6 +79,37 @@ export default function ProductsScreen() {
 
   const getTotalValue = () => {
     return products.reduce((total, product) => total + (product.price * product.quantity), 0);
+  };
+
+  const adjustStock = (productId: string, adjustment: number) => {
+    setProducts(prevProducts => 
+      prevProducts.map(product => {
+        if (product.id === productId) {
+          const newQuantity = product.quantity + adjustment;
+          
+          // Prevent negative stock
+          if (newQuantity < 0) {
+            Alert.alert('Error', 'Stock cannot be negative');
+            return product;
+          }
+          
+          return {
+            ...product,
+            quantity: newQuantity,
+            lastUpdated: new Date()
+          };
+        }
+        return product;
+      })
+    );
+  };
+
+  const incrementStock = (productId: string) => {
+    adjustStock(productId, 1);
+  };
+
+  const decrementStock = (productId: string) => {
+    adjustStock(productId, -1);
   };
 
   return (
@@ -206,19 +237,53 @@ export default function ProductsScreen() {
                     </View>
                   </View>
                   
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-row items-center">
-                      <Text className="text-sm text-gray-600 mr-4">
-                        Qty: {product.quantity}
-                      </Text>
-                      <Text className="text-sm text-gray-600">
-                        Value: {formatCurrency(product.price * product.quantity)}
-                      </Text>
-                    </View>
-                    <Text className="text-xs text-gray-400">
-                      Added: {product.createdAt.toLocaleDateString()}
-                    </Text>
-                  </View>
+                  <View className="flex-row justify-between items-center mb-3">
+                     <View className="flex-row items-center">
+                       <Text className="text-sm text-gray-600 mr-4">
+                         Qty: {product.quantity}
+                       </Text>
+                       <Text className="text-sm text-gray-600">
+                         Value: {formatCurrency(product.price * product.quantity)}
+                       </Text>
+                     </View>
+                     <Text className="text-xs text-gray-400">
+                       Added: {product.createdAt.toLocaleDateString()}
+                     </Text>
+                   </View>
+                   
+                   {/* Stock Adjustment Controls */}
+                   <View className="flex-row justify-between items-center">
+                     <View className="flex-row items-center">
+                       <TouchableOpacity
+                         className="bg-red-500 px-3 py-2 rounded-lg mr-2"
+                         onPress={() => decrementStock(product.id)}
+                       >
+                         <Text className="text-white font-semibold text-sm">-</Text>
+                       </TouchableOpacity>
+                       
+                       <View className="bg-gray-100 px-4 py-2 rounded-lg mx-2">
+                         <Text className="text-gray-800 font-medium text-sm">
+                           Stock: {product.quantity}
+                         </Text>
+                       </View>
+                       
+                       <TouchableOpacity
+                         className="bg-green-500 px-3 py-2 rounded-lg ml-2"
+                         onPress={() => incrementStock(product.id)}
+                       >
+                         <Text className="text-white font-semibold text-sm">+</Text>
+                       </TouchableOpacity>
+                     </View>
+                     
+                     <View className="items-end">
+                       <Text className="text-xs text-gray-400">
+                         Updated: {product.lastUpdated.toLocaleDateString()}
+                       </Text>
+                       <Text className="text-xs text-gray-400">
+                         {product.lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                       </Text>
+                     </View>
+                   </View>
                 </View>
               ))}
             </View>
