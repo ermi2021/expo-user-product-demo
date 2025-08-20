@@ -12,12 +12,28 @@ interface Product {
   lastUpdated: Date;
 }
 
+interface Transaction {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  type: 'increment' | 'decrement';
+  quantityChange: number;
+  previousQuantity: number;
+  newQuantity: number;
+  timestamp: Date;
+}
+
 export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showTransactions, setShowTransactions] = useState(false);
+  const transactionsPerPage = 5;
 
   const validateSku = (sku: string) => {
     // SKU should be alphanumeric and at least 3 characters
@@ -81,6 +97,37 @@ export default function ProductsScreen() {
     return products.reduce((total, product) => total + (product.price * product.quantity), 0);
   };
 
+  const getPaginatedTransactions = () => {
+    const startIndex = (currentPage - 1) * transactionsPerPage;
+    const endIndex = startIndex + transactionsPerPage;
+    return transactions.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    return Math.ceil(transactions.length / transactionsPerPage);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < getTotalPages()) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const formatTransactionTime = (date: Date) => {
+    return date.toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const adjustStock = (productId: string, adjustment: number) => {
     setProducts(prevProducts => 
       prevProducts.map(product => {
@@ -92,6 +139,21 @@ export default function ProductsScreen() {
             Alert.alert('Error', 'Stock cannot be negative');
             return product;
           }
+          
+          // Record transaction
+          const transaction: Transaction = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            productId: product.id,
+            productName: product.name,
+            productSku: product.sku,
+            type: adjustment > 0 ? 'increment' : 'decrement',
+            quantityChange: Math.abs(adjustment),
+            previousQuantity: product.quantity,
+            newQuantity: newQuantity,
+            timestamp: new Date()
+          };
+          
+          setTransactions(prevTransactions => [transaction, ...prevTransactions]);
           
           return {
             ...product,
@@ -120,9 +182,19 @@ export default function ProductsScreen() {
           <Text className="text-2xl font-bold text-gray-800 text-center mb-2">
             📦 Product Management
           </Text>
-          <Text className="text-sm text-gray-600 text-center">
+          <Text className="text-sm text-gray-600 text-center mb-6">
             Register new products and manage inventory
           </Text>
+          
+          {/* Toggle Transaction History */}
+          <TouchableOpacity
+            className="bg-blue-600 py-2 px-4 rounded-lg self-center"
+            onPress={() => setShowTransactions(!showTransactions)}
+          >
+            <Text className="text-white text-center font-medium text-sm">
+              {showTransactions ? 'Hide' : 'Show'} Transaction History ({transactions.length})
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Registration Form */}
@@ -287,9 +359,117 @@ export default function ProductsScreen() {
                 </View>
               ))}
             </View>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+           )}
+         </View>
+
+         {/* Transaction History */}
+         {showTransactions && (
+           <View className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+             <View className="p-4 border-b border-gray-200">
+               <Text className="text-lg font-semibold text-gray-800 mb-1">
+                 📊 Transaction History
+               </Text>
+               <Text className="text-sm text-gray-600">
+                 Recent stock adjustments ({transactions.length} total)
+               </Text>
+             </View>
+             
+             {transactions.length === 0 ? (
+               <View className="p-6">
+                 <Text className="text-gray-500 text-center">
+                   No transactions recorded yet
+                 </Text>
+               </View>
+             ) : (
+               <View>
+                 {getPaginatedTransactions().map((transaction, index) => (
+                   <View
+                     key={transaction.id}
+                     className={`p-4 ${index < getPaginatedTransactions().length - 1 ? 'border-b border-gray-100' : ''}`}
+                   >
+                     <View className="flex-row justify-between items-start mb-2">
+                       <View className="flex-1">
+                         <Text className="text-base font-medium text-gray-800 mb-1">
+                           {transaction.productName}
+                         </Text>
+                         <Text className="text-sm text-gray-600">
+                           SKU: {transaction.productSku}
+                         </Text>
+                       </View>
+                       <View className="items-end">
+                         <View className={`px-2 py-1 rounded-full ${
+                           transaction.type === 'increment' ? 'bg-green-100' : 'bg-red-100'
+                         }`}>
+                           <Text className={`text-xs font-medium ${
+                             transaction.type === 'increment' ? 'text-green-700' : 'text-red-700'
+                           }`}>
+                             {transaction.type === 'increment' ? '+' : '-'}{transaction.quantityChange}
+                           </Text>
+                         </View>
+                       </View>
+                     </View>
+                     
+                     <View className="flex-row justify-between items-center">
+                       <View className="flex-row items-center">
+                         <Text className="text-sm text-gray-600 mr-4">
+                           {transaction.previousQuantity} → {transaction.newQuantity}
+                         </Text>
+                         <Text className="text-sm text-gray-500">
+                           Stock {transaction.type === 'increment' ? 'increased' : 'decreased'}
+                         </Text>
+                       </View>
+                       <Text className="text-xs text-gray-400">
+                         {formatTransactionTime(transaction.timestamp)}
+                       </Text>
+                     </View>
+                   </View>
+                 ))}
+                 
+                 {/* Pagination Controls */}
+                 {getTotalPages() > 1 && (
+                   <View className="p-4 border-t border-gray-200">
+                     <View className="flex-row justify-between items-center">
+                       <TouchableOpacity
+                         className={`px-4 py-2 rounded-lg ${
+                           currentPage === 1 ? 'bg-gray-200' : 'bg-blue-600'
+                         }`}
+                         onPress={goToPreviousPage}
+                         disabled={currentPage === 1}
+                       >
+                         <Text className={`text-sm font-medium ${
+                           currentPage === 1 ? 'text-gray-400' : 'text-white'
+                         }`}>
+                           Previous
+                         </Text>
+                       </TouchableOpacity>
+                       
+                       <View className="flex-row items-center">
+                         <Text className="text-sm text-gray-600 mx-4">
+                           Page {currentPage} of {getTotalPages()}
+                         </Text>
+                       </View>
+                       
+                       <TouchableOpacity
+                         className={`px-4 py-2 rounded-lg ${
+                           currentPage === getTotalPages() ? 'bg-gray-200' : 'bg-blue-600'
+                         }`}
+                         onPress={goToNextPage}
+                         disabled={currentPage === getTotalPages()}
+                       >
+                         <Text className={`text-sm font-medium ${
+                           currentPage === getTotalPages() ? 'text-gray-400' : 'text-white'
+                         }`}>
+                           Next
+                         </Text>
+                       </TouchableOpacity>
+                     </View>
+                   </View>
+                 )}
+               </View>
+             )}
+           </View>
+         )}
+       </ScrollView>
+     </SafeAreaView>
+   );
+ }
