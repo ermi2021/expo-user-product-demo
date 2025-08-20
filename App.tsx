@@ -38,29 +38,29 @@ function TabNavigator() {
           fontWeight: '500',
         },
       }}
-        >
-          <Tab.Screen
-            name="Users"
-            component={UsersScreen}
-            options={{
-              title: '👥 Users',
-              tabBarLabel: 'Users',
-              tabBarIcon: ({ color, size }) => (
-                <Text style={{ color, fontSize: size }}>👥</Text>
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Products"
-            component={ProductsScreen}
-            options={{
-              title: '📦 Products',
-              tabBarLabel: 'Products',
-              tabBarIcon: ({ color, size }) => (
-                <Text style={{ color, fontSize: size }}>📦</Text>
-              ),
-            }}
-          />
+    >
+      <Tab.Screen
+        name="Users"
+        component={UsersScreen}
+        options={{
+          title: '👥 Users',
+          tabBarLabel: 'Users',
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>👥</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Products"
+        component={ProductsScreen}
+        options={{
+          title: '📦 Products',
+          tabBarLabel: 'Products',
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>📦</Text>
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
