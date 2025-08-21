@@ -369,7 +369,7 @@ export default function ProductsScreen() {
         </View>
 
         {/* Product List */}
-        <View className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <View className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
           <View className="p-4 border-b border-gray-200">
             <Text className="text-lg font-semibold text-gray-800 mb-1">
               Product Inventory ({products.length})
@@ -465,7 +465,7 @@ export default function ProductsScreen() {
 
          {/* Transaction History */}
          {showTransactions && (
-           <View className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+           <View className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 mb-6">
              <View className="p-4 border-b border-gray-200">
                <Text className="text-lg font-semibold text-gray-800 mb-1">
                  📊 Transaction History

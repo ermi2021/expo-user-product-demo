@@ -156,7 +156,7 @@ export default function UsersScreen() {
         </View>
 
         {/* User List */}
-        <View className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <View className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
           <View className="p-4 border-b border-gray-200">
             <Text className="text-lg font-semibold text-gray-800">
               Registered Users ({users.length})
