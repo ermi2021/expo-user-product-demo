@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ButtonComponent from '../components/button';
 
 interface User {
   id: string;
@@ -141,18 +142,13 @@ export default function UsersScreen() {
               </Text>
             )}
           </View>
-
-          <TouchableOpacity
-            className={`py-3 rounded-lg ${
+          <ButtonComponent   className={`py-3 rounded-lg ${
               isSubmitting ? 'bg-gray-400' : 'bg-blue-600'
             }`}
             onPress={handleRegisterUser}
             disabled={isSubmitting}
-          >
-            <Text className="text-white text-center font-semibold text-base">
-              {isSubmitting ? 'Registering...' : 'Register User'}
-            </Text>
-          </TouchableOpacity>
+            label={isSubmitting ? 'Registering...' : 'Register User'}
+            labelClassName="text-white text-center font-semibold text-base"/>
         </View>
 
         {/* User List */}
